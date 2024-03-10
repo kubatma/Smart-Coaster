@@ -1,0 +1,78 @@
+#include <Adafruit_NeoPixel.h>
+#include <FastLED.h>
+
+#define LED_PIN 2   // Pin to use to send signals to WS2812B
+#define NUM_LEDS 1  // Number of WS2812B LEDs attached to the Arduino
+
+CRGB leds[NUM_LEDS];
+Adafruit_NeoPixel strip(NUM_LEDS, LED_PIN, NEO_GRB + NEO_KHZ800);  // Setting up the NeoPixel library
+
+int fsrPin = 0;  // the FSR and 10K pulldown are connected to a0
+int fsrReading;  // the analog reading from the FSR resistor divider
+
+
+unsigned long seconds = 1000L;  
+unsigned long minutes = seconds * 60;
+
+ //FUNCTIONS--------------------------------------------------------------------------------------------------------------
+
+void blue() {
+  strip.clear();  // Set all pixel colors to 'off'
+  leds[0] = CRGB(0, 0, 255); // Defines LED as blue
+  FastLED.show();
+}
+
+void red() {
+  strip.clear();  // Set all pixel colors to 'off'
+  leds[0] = CRGB(255, 0, 0); // Defines LED as red
+  FastLED.show();
+}
+
+void change(int time) {
+  strip.clear();  // Set all pixel colors to 'off'
+
+   // Transition from blue to red
+  for (int i = 0; i <= 255; i++) {
+    leds[0] = CRGB(0+i, 0, 255-i); // CRGB(R,G,B); red increases blue decreses
+    FastLED.show();
+    delay(time*5);  // Total time Adjust the delay to control the transition speed 
+    if(analogRead(fsrPin)>200)break;
+  }
+  
+}
+
+void setup(void) {
+  Serial.begin(9600);
+
+  strip.begin();           // Initialize NeoPixel object
+  strip.setBrightness(5);  // Set BRIGHTNESS to about 4% (max = 255)
+  FastLED.addLeds<WS2812B, LED_PIN, GRB>(leds, NUM_LEDS);
+    strip.clear();  // Set all pixel colors to 'off'
+}
+
+void loop(void) {
+
+
+ //READS THE PRESURE SENSOR--------------------------------------------------------------------------------------------------------------
+
+  fsrReading = analogRead(fsrPin);
+  Serial.print("Analog reading = ");
+  Serial.println(fsrReading);  // print the raw analog reading
+
+
+ //--------------------------------------------------------------------------------------------------------------
+
+
+  unsigned long currentTime = millis();
+
+
+  if (currentTime < 10*seconds) {  
+    blue();
+  } else if (currentTime < 20*seconds) {  
+    change(10);
+  } else {  // After 2 minutes
+    red();
+  }
+
+  delay(1000);
+}
